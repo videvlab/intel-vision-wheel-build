@@ -64,15 +64,24 @@ def collect_notices(source,destination):
         if file.is_file() and not file.is_symlink() and '.git' not in file.relative_to(source).parts and any(value in file.name.upper() for value in ['LICENSE','NOTICE','COPYING']):
             target=destination/file.relative_to(source);target.parent.mkdir(parents=True,exist_ok=True);shutil.copyfile(file,target)
 
+def build_assembler(spec,work,out,environment,log):
+    if spec['name']!='nasm' or spec['version']!='3.02' or spec['url']!='https://www.nasm.us/pub/nasm/releasebuilds/3.02/nasm-3.02.tar.xz':raise ValueError('EXACT_OFFICIAL_ASSEMBLER_REQUIRED')
+    source=work/'nasm-source';source.mkdir();extract_python(download(spec),source,spec['stripPrefix'])
+    collect_notices(source,out/'licenses/build-tools/nasm')
+    tool_environment={**environment,'CFLAGS':'-O2 -arch x86_64 -mmacosx-version-min=14.0'}
+    run(['bash',source/'configure','--prefix='+str(work/'nasm-prefix')],cwd=source,environment=tool_environment,log=log)
+    run(['make','-j3','nasm','ndisasm'],cwd=source,environment=tool_environment,log=log)
+    binary=source/'nasm';version=subprocess.check_output([str(binary),'-v'],env=tool_environment,text=True).strip()
+    if not version.startswith('NASM version 3.02'):raise ValueError('EXACT_ASSEMBLER_VERSION_MISMATCH')
+    return binary, {**spec,'sourceArchiveVerified':True,'executableSha256':digest(binary),'actualVersion':version,'copiedToUserEnvironment':False,'cflags':tool_environment['CFLAGS']}
+
 def build_codecs(inputs,work,out,python,environment,log):
     prefix=work/'codec-prefix';prefix.mkdir(parents=True,exist_ok=True);records=[]
-    cmake=python.parent/'cmake';nasm=shutil.which('nasm',path=environment['PATH'])
-    if not nasm:raise ValueError('ORIGINAL_JPEG_SIMD_ASSEMBLER_REQUIRED')
-    assembler={'path':nasm,'sha256':digest(Path(nasm).resolve()),'version':subprocess.check_output([nasm,'-v'],env=environment,text=True).strip(),'scope':'Existing standard runner build tool; not installed on users computers'}
+    cmake=python.parent/'cmake';nasm,assembler=build_assembler(inputs['assembler'],work,out,environment,log)
     for spec in sorted(inputs['codecs'],key=lambda item:['libpng','jpeg-turbo','webp'].index(item['name'])):
         src=work/('codec-source-'+spec['name']);src.mkdir(parents=True,exist_ok=True);extract_python(download(spec),src,spec['stripPrefix'])
         collect_notices(src,out/'licenses/codecs'/spec['name'])
-        target=work/('codec-build-'+spec['name']);flags=['-DCMAKE_BUILD_TYPE=Release','-DCMAKE_OSX_ARCHITECTURES=x86_64','-DCMAKE_OSX_DEPLOYMENT_TARGET=14.0','-DCMAKE_INSTALL_PREFIX='+str(prefix),'-DCMAKE_PREFIX_PATH='+str(prefix),'-DCMAKE_IGNORE_PREFIX_PATH=/usr/local;/opt/homebrew','-DBUILD_SHARED_LIBS=ON','-DCMAKE_ASM_NASM_COMPILER='+nasm]
+        target=work/('codec-build-'+spec['name']);flags=['-DCMAKE_BUILD_TYPE=Release','-DCMAKE_OSX_ARCHITECTURES=x86_64','-DCMAKE_OSX_DEPLOYMENT_TARGET=14.0','-DCMAKE_INSTALL_PREFIX='+str(prefix),'-DCMAKE_PREFIX_PATH='+str(prefix),'-DCMAKE_IGNORE_PREFIX_PATH=/usr/local;/opt/homebrew','-DBUILD_SHARED_LIBS=ON','-DCMAKE_ASM_NASM_COMPILER='+str(nasm)]
         run([cmake,'-S',src,'-B',target,*flags],environment=environment,log=log)
         run([cmake,'--build',target,'--parallel','3'],environment=environment,log=log)
         run([cmake,'--install',target],environment=environment,log=log)
