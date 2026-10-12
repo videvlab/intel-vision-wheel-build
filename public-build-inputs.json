@@ -638,5 +638,40 @@
     "repository": "https://github.com/pytorch/vision",
     "commit": "1f1a920d685d46dfbe187934b785b7ecb7a182f2"
   },
-  "scope": "Public upstream library source/build inputs only; no product engine, presets, models, accounts, or private CI provenance."
+  "scope": "Public upstream library source/build inputs only; no product engine, presets, models, accounts, or private CI provenance.",
+  "codecs": [
+    {
+      "name": "jpeg-turbo",
+      "version": "3.2.0",
+      "url": "https://github.com/libjpeg-turbo/libjpeg-turbo/releases/download/3.2.0/libjpeg-turbo-3.2.0.tar.gz",
+      "sha256": "6f30092cef9fb839779646608f4ee14ae3cbac989c47fa05e841b0841f09878e",
+      "bytes": 2537858,
+      "stripPrefix": "libjpeg-turbo-3.2.0/",
+      "minimumMacOS": "14.0",
+      "architecture": "x86_64",
+      "sourceOnly": true
+    },
+    {
+      "name": "webp",
+      "version": "1.6.0",
+      "url": "https://storage.googleapis.com/downloads.webmproject.org/releases/webp/libwebp-1.6.0.tar.gz",
+      "sha256": "e4ab7009bf0629fd11982d4c2aa83964cf244cffba7347ecd39019a9e38c4564",
+      "bytes": 4296070,
+      "stripPrefix": "libwebp-1.6.0/",
+      "minimumMacOS": "14.0",
+      "architecture": "x86_64",
+      "sourceOnly": true
+    },
+    {
+      "name": "libpng",
+      "version": "1.6.58",
+      "url": "https://github.com/pnggroup/libpng/archive/refs/tags/v1.6.58.tar.gz",
+      "sha256": "a9d4df463d36a6e5f9c29bd6f4967312d17e996c1854f3511f833924eb1993cf",
+      "bytes": 1592190,
+      "stripPrefix": "libpng-1.6.58/",
+      "minimumMacOS": "14.0",
+      "architecture": "x86_64",
+      "sourceOnly": true
+    }
+  ]
 }
